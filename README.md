@@ -72,9 +72,3 @@ This project uses historical air quality data sourced from the [CPCB (Central Po
 
 ---
 
-## 🚀 Getting Started
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/pollution-heatmap.git
-cd pollution-heatmap
