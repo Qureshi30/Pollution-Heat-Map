@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emission Tracker - Home</title>
+    <!-- Primary Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback for Tailwind CSS -->
+    <script>
+        // Check if Tailwind loaded correctly
+        window.addEventListener('DOMContentLoaded', function () {
+            // Simple check to see if Tailwind styles are applied
+            const element = document.createElement('div');
+            element.className = 'hidden';
+            document.body.appendChild(element);
+
+            const styles = window.getComputedStyle(element);
+            const isHidden = styles.display === 'none';
+            document.body.removeChild(element);
+
+            if (!isHidden) {
+                console.log('Tailwind CSS failed to load. Loading fallback...');
+                // Load alternative Tailwind CSS
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css';
+                document.head.appendChild(link);
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="text-xl font-bold">Emission Tracker</div>
+                <ul class="flex space-x-6">
+                    <li><a href="home.html" class="font-bold underline hover:text-green-200 transition-colors">Home</a>
+                    </li>
+                    <li><a href="carbon-footprint-visualizer.html" class="hover:text-green-200 transition-colors">Emission Visualizer</a></li>
+                    <li><a href="carbon-emission-calculator.html" class="hover:text-green-200 transition-colors">Carbon
+                            Emission Calculator</a></li>
+                    <li><a href="future-emission-prediction.html" class="hover:text-green-200 transition-colors">Future Emission 
+                        Prediction</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-12">
+        <!-- Hero Section -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-12">
+            <div class="md:flex">
+                <div class="md:w-1/2 p-8 md:p-12">
+                    <h1 class="text-4xl font-bold text-green-700 mb-4">Track, Understand, Reduce</h1>
+                    <p class="text-xl text-gray-600 mb-6">
+                        Your personal carbon footprint matters. Our tools help you visualize and calculate your impact
+                        on the planet.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="carbon-footprint-visualizer.html"
+                            class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+                            View Visualizations
+                        </a>
+                        <a href="carbon-emission-calculator.html"
+                            class="bg-gray-200 text-gray-800 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
+                            Calculate Your Footprint
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 bg-green-100 flex items-center justify-center p-12">
+                    <div class="text-center">
+                        <div class="text-6xl text-green-600 mb-4">🌍</div>
+                        <p class="text-xl text-green-800 font-semibold">Together for a Greener Future</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-12">
+            <h2 class="text-3xl font-bold text-green-700 mb-6">About This Project</h2>
+            <div class="prose max-w-none text-gray-700">
+                <p class="mb-4">
+                    The Emission Tracker is a comprehensive tool designed to help individuals and organizations
+                    understand their environmental impact through carbon emissions. Our platform offers two main
+                    features:
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-green-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold text-green-700 mb-3">Carbon Footprint Visualizer</h3>
+                        <p>
+                            Our visualizer provides interactive maps and charts showing carbon emission trends across
+                            different
+                            regions and time periods. This tool helps you understand global and regional emission
+                            patterns,
+                            making complex data accessible and meaningful.
+                        </p>
+                        <a href="carbon-footprint-visualizer.html"
+                            class="inline-block mt-4 text-green-600 hover:underline">
+                            Explore the Visualizer →
+                        </a>
+                    </div>
+
+                    <div class="bg-green-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold text-green-700 mb-3">Carbon Emission Calculator</h3>
+                        <p>
+                            Our calculator allows you to input your lifestyle details and receive a personalized carbon
+                            footprint
+                            estimate. By understanding your individual impact, you can make informed decisions about how
+                            to reduce
+                            your emissions and track your progress over time.
+                        </p>
+                        <a href="carbon-emission-calculator.html"
+                            class="inline-block mt-4 text-green-600 hover:underline">
+                            Calculate Your Footprint →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Why It Matters Section -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-green-700 mb-6">Why Carbon Footprint Matters</h2>
+            <div class="prose max-w-none text-gray-700">
+                <p class="mb-4">
+                    Climate change is one of the most pressing challenges of our time. Every action we take has an
+                    environmental
+                    cost, and understanding our carbon footprint is the first step toward making more sustainable
+                    choices.
+                </p>
+
+                <div class="grid md:grid-cols-3 gap-6 mt-8">
+                    <div class="border border-gray-200 p-5 rounded-lg">
+                        <div class="text-4xl text-green-600 mb-3">🌡️</div>
+                        <h3 class="text-lg font-semibold mb-2">Climate Impact</h3>
+                        <p class="text-sm">
+                            Carbon emissions are the primary driver of global warming, leading to more extreme weather
+                            events,
+                            rising sea levels, and disruptions to ecosystems worldwide.
+                        </p>
+                    </div>
+
+                    <div class="border border-gray-200 p-5 rounded-lg">
+                        <div class="text-4xl text-green-600 mb-3">🌱</div>
+                        <h3 class="text-lg font-semibold mb-2">Individual Action</h3>
+                        <p class="text-sm">
+                            While systemic change is crucial, individual choices matter too. Collectively, our personal
+                            decisions
+                            can drive significant reductions in global emissions.
+                        </p>
+                    </div>
+
+                    <div class="border border-gray-200 p-5 rounded-lg">
+                        <div class="text-4xl text-green-600 mb-3">📊</div>
+                        <h3 class="text-lg font-semibold mb-2">Measurable Progress</h3>
+                        <p class="text-sm">
+                            By tracking your carbon footprint over time, you can see the impact of your lifestyle
+                            changes and
+                            be motivated by your progress toward sustainability.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto px-4">
+            <p class="text-center text-gray-600">© 2025 Emission Tracker | All Rights Reserved</p>
+        </div>
+    </footer>
+</body>
+
+</html>

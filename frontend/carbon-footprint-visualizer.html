@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emission Visualizer</title>
+    <!-- Primary Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback for Tailwind CSS -->
+    <script>
+        // Check if Tailwind loaded correctly
+        window.addEventListener('DOMContentLoaded', function () {
+            // Simple check to see if Tailwind styles are applied
+            const element = document.createElement('div');
+            element.className = 'hidden';
+            document.body.appendChild(element);
+
+            const styles = window.getComputedStyle(element);
+            const isHidden = styles.display === 'none';
+            document.body.removeChild(element);
+
+            if (!isHidden) {
+                console.log('Tailwind CSS failed to load. Loading fallback...');
+                // Load alternative Tailwind CSS
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css';
+                document.head.appendChild(link);
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet Heat plugin -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <style>
+        #map-container {
+            height: 500px;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        #map-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="text-xl font-bold">Emission Tracker</div>
+                <ul class="flex space-x-6">
+                    <li><a href="home.html" class="hover:text-green-200 transition-colors">Home</a></li>
+                    <li><a href="carbon-footprint-visualizer.html"
+                            class="font-bold underline hover:text-green-200 transition-colors">Emission Visualizer</a></li>
+                    <li><a href="carbon-emission-calculator.html" class="hover:text-green-200 transition-colors">Carbon
+                            Emission Calculator</a></li>
+                    <li><a href="future-emission-prediction.html" class="hover:text-green-200 transition-colors">Future Emission 
+                        Prediction</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-center text-green-600">Emission Visualizer</h1>
+            <p class="text-center text-gray-600 mt-2">Visualize carbon emission trends across multiple years in
+                different regions</p>
+        </header>
+
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="city-select" class="block text-sm font-medium text-gray-700 mb-2">Select Region</label>
+                    <select id="city-select"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Loading regions...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="pollutant-select" class="block text-sm font-medium text-gray-700 mb-2">Select Emission
+                        Type</label>
+                    <select id="pollutant-select"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Loading emission types...</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="fetch-data-btn"
+                class="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                Generate
+            </button>
+        </div>
+        
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <!-- Leaflet Map Container (replacing Folium) -->
+            <div class="bg-white p-6 rounded-lg shadow-md relative">
+                <h2 class="text-xl font-semibold mb-4">Emission Heatmap</h2>
+                <div id="map-container">
+                    <iframe id="map-frame" src="about:blank" style="height: 100%; width: 100%; border: none;"></iframe>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Low</span>
+                        <div class="w-full mx-2 h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded">
+                        </div>
+                        <span class="text-sm text-gray-600">High</span>
+                    </div>
+                </div>
+                <div class="loading" id="map-loading">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+                </div>
+            </div>
+
+            <!-- Trend Chart Container -->
+            <div class="bg-white p-6 rounded-lg shadow-md relative">
+                <h2 class="text-xl font-semibold mb-4">Emission Trend Analysis</h2>
+                <canvas id="trend-chart"></canvas>
+                <div class="loading" id="chart-loading">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Summary Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-8">
+            <h2 class="text-xl font-semibold mb-4">Emission Data Summary</h2>
+            <div id="data-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-blue-700">Average Emissions</h3>
+                    <p id="average-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-red-700">Maximum Emissions</h3>
+                    <p id="max-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-green-700">Minimum Emissions</h3>
+                    <p id="min-value" class="text-2xl font-bold">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Text Summary Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-8" id="text-summary-container" style="display: none;">
+            <h2 class="text-xl font-semibold mb-4">Analysis Summary</h2>
+            <div class="prose max-w-none">
+                <p id="text-summary" class="text-gray-700 leading-relaxed">
+                    Select a region and emission type to view the analysis summary.
+                </p>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-indigo-700 mb-2">Environmental Impact</h3>
+                    <p id="health-implications" class="text-gray-700 leading-relaxed">
+                        Information about environmental impact will appear here.
+                    </p>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-indigo-700 mb-2">Trend Analysis</h3>
+                    <p id="trend-analysis" class="text-gray-700 leading-relaxed">
+                        Information about emission trends will appear here.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto px-4">
+            <p class="text-center text-gray-600">© 2025 Carbon Footprint Tracker | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

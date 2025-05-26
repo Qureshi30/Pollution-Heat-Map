@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Emission Prediction</title>
+    <!-- Add Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            const element = document.createElement('div');
+            element.className = 'hidden';
+            document.body.appendChild(element);
+
+            const styles = window.getComputedStyle(element);
+            const isHidden = styles.display === 'none';
+            document.body.removeChild(element);
+
+            if (!isHidden) {
+                console.log('Tailwind CSS failed to load. Loading fallback...');
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css';
+                document.head.appendChild(link);
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="text-xl font-bold">Emission Tracker</div>
+                <ul class="flex space-x-6">
+                    <li><a href="home.html" class="hover:text-green-200 transition-colors">Home</a></li>
+                    <li><a href="carbon-footprint-visualizer.html" class="hover:text-green-200 transition-colors">Emission Visualizer</a></li>
+                    <li><a href="carbon-emission-calculator.html" class="hover:text-green-200 transition-colors">Carbon Emission Calculator</a></li>
+                    <li><a href="future-emission-prediction.html" class="font-bold underline hover:text-green-200 transition-colors">Future Emission Prediction</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-center text-green-600">Emission Visualizer</h1>
+            <p class="text-center text-gray-600 mt-2">Visualize carbon emission trends across multiple years in different regions</p>
+        </header>
+                
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label for="city-select" class="block text-sm font-medium text-gray-700 mb-2">Select Region</label>
+                    <select id="city-select"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Loading regions...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="year-select" class="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
+                    <select id="year-select" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="model-select" class="block text-sm font-medium text-gray-700 mb-2">Select Model</label>
+                    <select id="model-select" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Loading model...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pollutant-select" class="block text-sm font-medium text-gray-700 mb-2">Select Emission Type</label>
+                    <select id="pollutant-select"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Select Emission</option>
+                        <option value="Predicted_PM2.5">PM2.5</option>
+                        <option value="Predicted_PM10">PM10</option>
+                        <option value="Predicted_SO2">SO2</option>
+                        <option value="Predicted_CO">CO</option>
+                        <option value="Predicted_Ozone">Ozone</option>
+                        <option value="Predicted_AT">AT</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button id="fetch-data-btn"
+            class="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+            Get Prediction
+        </button>
+
+        <!-- Trend Chart Container -->
+        <div class="bg-white p-6 rounded-lg shadow-md relative mt-8">
+            <h2 class="text-xl font-semibold mb-4">Emission Trend Analysis</h2>
+            <canvas id="trend-chart"></canvas>
+            <div class="loading absolute inset-0 flex justify-center items-center" id="chart-loading">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            </div>
+        </div>
+        
+        <!-- Data Summary Section -->
+        <!-- <div class="bg-white p-6 rounded-lg shadow-md mt-8">
+            <h2 class="text-xl font-semibold mb-4">Emission Data Summary</h2>
+            <div id="data-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-blue-700">Average Emissions</h3>
+                    <p id="average-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-red-700">Maximum Emissions</h3>
+                    <p id="max-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-green-700">Minimum Emissions</h3>
+                    <p id="min-value" class="text-2xl font-bold">-</p>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Model Info Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-8" id="model-info-container" style="display: none;">
+            <h2 class="text-xl font-semibold mb-4" id="model-description">Model Description</h2>
+            <div id="model-metrics" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-blue-700">MAE</h3>
+                    <p id="mae-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-red-700">R²</h3>
+                    <p id="r2-value" class="text-2xl font-bold">-</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-green-700">MAPE</h3>
+                    <p id="mape-value" class="text-2xl font-bold">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Text Summary Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-8" id="text-summary-container" style="display: none;">
+            <h2 class="text-xl font-semibold mb-4">Analysis Summary</h2>
+            <div class="prose max-w-none">
+                <p id="text-summary" class="text-gray-700 leading-relaxed">
+                    Select a region and emission type to view the analysis summary.
+                </p>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-indigo-700 mb-2">Environmental Impact</h3>
+                    <p id="health-implications" class="text-gray-700 leading-relaxed">
+                        Information about environmental impact will appear here.
+                    </p>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-indigo-700 mb-2">Trend Analysis</h3>
+                    <p id="trend-analysis" class="text-gray-700 leading-relaxed">
+                        Information about emission trends will appear here.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto px-4">
+            <p class="text-center text-gray-600">© 2025 Carbon Footprint Tracker | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="script2.js"></script>
+</body>
+
+</html>
