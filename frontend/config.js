@@ -5,7 +5,7 @@
 // const API_BASE_URL = 'http://localhost:8002';
 
 // For production (replace with your actual Render backend URL)
-const API_BASE_URL = 'https://pollution-heatmap-api.onrender.com';
+const API_BASE_URL = 'https://pollution-heat-map.onrender.com';
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

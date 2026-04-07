@@ -1,5 +1,5 @@
 // API endpoint
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = 'https://pollution-heat-map.onrender.com';
 
 // DOM elements
 const citySelect = document.getElementById('city-select');
@@ -192,11 +192,11 @@ function updateModelInfo(model) {
 
     // Hide the metrics table initially
     modelMetricsTable.style.display = 'none';
-    
+
     // Set the description and metrics based on the selected model
     if (modelMetricsData[model]) {
         const metrics = modelMetricsData[model];
-        
+
         // Update the model description and metrics
         switch (model) {
             case 'RFR':
