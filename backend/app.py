@@ -1,13 +1,23 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 import pandas as pd
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import glob
 import re
 import folium
 from folium.plugins import HeatMap
-from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+import json
+import datetime
+import tempfile
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 app = FastAPI(title="Pollution Heatmap API")
 
@@ -926,6 +936,296 @@ async def add_leaflet_marker(
     """
     
     return marker_html
+
+# ============ CARBON CALCULATOR API ENDPOINTS ============
+
+# Models for Carbon Calculator
+class EmissionInput(BaseModel):
+    # Transportation
+    vehicle_type: str
+    fuel_type: str
+    miles_per_day: float  # Now represents kilometers_per_day
+    public_transport: float
+    flights_per_year: float
+    flight_hours: float
+    
+    # Home Energy
+    electricity_kwh: float
+    gas_usage: float
+    water_usage: float  # Now represents liters_per_day
+    renewable_energy: str
+    
+    # Diet & Lifestyle
+    diet_type: str
+    local_food: str
+    food_waste: str
+    recycling_level: str
+
+class EmissionResult(BaseModel):
+    total_emissions: float
+    transportation_emissions: float
+    energy_emissions: float
+    diet_emissions: float
+    recommendations: List[str]
+    exceeds_threshold: bool
+
+# Carbon calculator functions
+def calculate_transportation_emissions_calc(vehicle_type, fuel_type, miles_per_day, public_transport, flights_per_year, flight_hours):
+    kilometers_per_day = miles_per_day
+    emissions = 0
+    
+    if vehicle_type != 'none' and kilometers_per_day > 0:
+        kilometers_per_year = kilometers_per_day * 365
+        emission_factor = 0
+        
+        if vehicle_type == 'small-car':
+            if fuel_type in ['gasoline', 'petrol']: emission_factor = 0.2
+            elif fuel_type == 'diesel': emission_factor = 0.17
+            elif fuel_type == 'hybrid': emission_factor = 0.12
+            elif fuel_type == 'electric': emission_factor = 0.06
+        elif vehicle_type == 'medium-car':
+            if fuel_type in ['gasoline', 'petrol']: emission_factor = 0.26
+            elif fuel_type == 'diesel': emission_factor = 0.23
+            elif fuel_type == 'hybrid': emission_factor = 0.14
+            elif fuel_type == 'electric': emission_factor = 0.06
+        elif vehicle_type == 'large-car':
+            if fuel_type in ['gasoline', 'petrol']: emission_factor = 0.36
+            elif fuel_type == 'diesel': emission_factor = 0.32
+            elif fuel_type == 'hybrid': emission_factor = 0.19
+            elif fuel_type == 'electric': emission_factor = 0.06
+        elif vehicle_type == 'motorcycle':
+            emission_factor = 0.11
+        
+        emissions += (kilometers_per_year * emission_factor) / 1000
+    
+    if public_transport > 0:
+        public_transport_factor = 2.5
+        emissions += (public_transport * 52 * public_transport_factor) / 1000
+    
+    if flights_per_year > 0 and flight_hours > 0:
+        flight_factor = 90
+        emissions += (flights_per_year * flight_hours * flight_factor) / 1000
+    
+    return round(emissions, 2)
+
+def calculate_energy_emissions_calc(electricity_kwh, gas_usage, water_usage, renewable_energy):
+    liters_per_day = water_usage
+    emissions = 0
+    
+    if electricity_kwh > 0:
+        electricity_factor = 0.42
+        
+        if renewable_energy == 'partial': electricity_factor *= 0.7
+        elif renewable_energy == 'significant': electricity_factor *= 0.3
+        elif renewable_energy == 'complete': electricity_factor = 0
+        
+        emissions += (electricity_kwh * 12 * electricity_factor) / 1000
+    
+    if gas_usage > 0:
+        gas_factor = 5.3
+        emissions += (gas_usage * 12 * gas_factor) / 1000
+    
+    if liters_per_day > 0:
+        water_factor = 1.2
+        emissions += (liters_per_day * 365 * water_factor) / (1000 * 1000)
+    
+    return round(emissions, 2)
+
+def calculate_diet_emissions_calc(diet_type, local_food, food_waste, recycling_level):
+    emissions = 0
+    
+    if diet_type == 'meat-heavy': emissions += 3.3
+    elif diet_type == 'meat-medium': emissions += 2.5
+    elif diet_type == 'pescatarian': emissions += 1.9
+    elif diet_type == 'vegetarian': emissions += 1.7
+    elif diet_type == 'vegan': emissions += 1.5
+    
+    local_food_factor = 1.0
+    if local_food == 'mostly': local_food_factor = 0.9
+    elif local_food == 'half': local_food_factor = 0.95
+    elif local_food == 'some': local_food_factor = 0.98
+    elif local_food == 'very-little': local_food_factor = 1.0
+    
+    emissions *= local_food_factor
+    
+    food_waste_factor = 1.0
+    if food_waste == 'minimal': food_waste_factor = 1.0
+    elif food_waste == 'low': food_waste_factor = 1.05
+    elif food_waste == 'average': food_waste_factor = 1.1
+    elif food_waste == 'high': food_waste_factor = 1.2
+    elif food_waste == 'very-high': food_waste_factor = 1.3
+    
+    emissions *= food_waste_factor
+    
+    recycling_reduction = 0
+    if recycling_level == 'minimal': recycling_reduction = 0.1
+    elif recycling_level == 'moderate': recycling_reduction = 0.3
+    elif recycling_level == 'extensive': recycling_reduction = 0.5
+    elif recycling_level == 'zero-waste': recycling_reduction = 0.8
+    
+    waste_emissions = 1.5 * (1 - recycling_reduction)
+    emissions += waste_emissions
+    
+    return round(emissions, 2)
+
+def generate_recommendations_calc(data):
+    kilometers_per_day = data.miles_per_day
+    recommendations = []
+    
+    if data.vehicle_type != 'none' and data.vehicle_type != 'electric' and kilometers_per_day > 30:
+        recommendations.append('Consider carpooling or using public transportation to reduce your daily driving emissions.')
+    
+    if data.vehicle_type != 'none' and data.vehicle_type != 'electric' and data.vehicle_type != 'hybrid':
+        recommendations.append('When possible, consider switching to a more fuel-efficient or electric vehicle.')
+    
+    if data.public_transport < 2 and kilometers_per_day > 15:
+        recommendations.append('Try using public transportation more frequently for your regular commute.')
+    
+    if data.flights_per_year > 3:
+        recommendations.append('Consider reducing air travel or offsetting your flight emissions through carbon offset programs.')
+    
+    if data.electricity_kwh > 500 and data.renewable_energy == 'none':
+        recommendations.append('Look into renewable energy options for your home, such as solar panels or a green energy provider.')
+    
+    if data.electricity_kwh > 300:
+        recommendations.append('Reduce electricity usage by using energy-efficient appliances and turning off lights and devices when not in use.')
+    
+    if data.gas_usage > 50:
+        recommendations.append('Improve home insulation and heating efficiency to reduce natural gas consumption.')
+    
+    if data.water_usage > 300:
+        recommendations.append('Install water-efficient fixtures and be mindful of water usage to reduce your water-related emissions.')
+    
+    if data.diet_type in ['meat-heavy', 'meat-medium']:
+        recommendations.append('Consider reducing meat consumption, particularly red meat, to lower your dietary carbon footprint.')
+    
+    if data.local_food in ['very-little', 'some']:
+        recommendations.append('Try to purchase more locally produced food to reduce transportation emissions in your food supply chain.')
+    
+    if data.food_waste in ['high', 'very-high']:
+        recommendations.append('Plan meals carefully and store food properly to reduce food waste.')
+    
+    if data.recycling_level in ['none', 'minimal']:
+        recommendations.append('Improve your recycling habits and try to reduce single-use plastics and packaging.')
+    
+    if len(recommendations) > 5:
+        recommendations = recommendations[:5]
+    
+    return recommendations
+
+def generate_pdf_report_calc(result, input_data):
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    pdf_path = temp_file.name
+    temp_file.close()
+    
+    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=18,
+        alignment=1,
+        spaceAfter=12
+    )
+    elements.append(Paragraph("Carbon Footprint Report", title_style))
+    elements.append(Spacer(1, 0.25*inch))
+    
+    date_str = datetime.datetime.now().strftime("%B %d, %Y")
+    elements.append(Paragraph(f"Generated on: {date_str}", styles['Normal']))
+    elements.append(Spacer(1, 0.5*inch))
+    
+    heading_style = ParagraphStyle(
+        'Heading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12
+    )
+    elements.append(Paragraph("Emission Summary", heading_style))
+    
+    summary_data = [
+        ['Category', 'Emissions (tons CO2e/year)'],
+        ['Transportation', f"{result.transportation_emissions:.2f}"],
+        ['Home Energy', f"{result.energy_emissions:.2f}"],
+        ['Diet & Lifestyle', f"{result.diet_emissions:.2f}"],
+        ['Total Annual Emissions', f"{result.total_emissions:.2f}"]
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightgreen),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(summary_table)
+    elements.append(Spacer(1, 0.5*inch))
+    
+    elements.append(Paragraph("Recommendations", heading_style))
+    for i, recommendation in enumerate(result.recommendations, 1):
+        elements.append(Paragraph(f"{i}. {recommendation}", styles['Normal']))
+        elements.append(Spacer(1, 0.1*inch))
+    
+    doc.build(elements)
+    
+    return pdf_path
+
+@app.post("/api/calculate-emissions")
+async def calculate_emissions(data: EmissionInput):
+    try:
+        transportation_emissions = calculate_transportation_emissions_calc(
+            data.vehicle_type, data.fuel_type, data.miles_per_day, 
+            data.public_transport, data.flights_per_year, data.flight_hours
+        )
+        
+        energy_emissions = calculate_energy_emissions_calc(
+            data.electricity_kwh, data.gas_usage, data.water_usage, data.renewable_energy
+        )
+        
+        diet_emissions = calculate_diet_emissions_calc(
+            data.diet_type, data.local_food, data.food_waste, data.recycling_level
+        )
+        
+        total_emissions = round(transportation_emissions + energy_emissions + diet_emissions, 2)
+        
+        recommendations = generate_recommendations_calc(data)
+        
+        exceeds_threshold = total_emissions > 10
+        
+        result = EmissionResult(
+            total_emissions=total_emissions,
+            transportation_emissions=transportation_emissions,
+            energy_emissions=energy_emissions,
+            diet_emissions=diet_emissions,
+            recommendations=recommendations,
+            exceeds_threshold=exceeds_threshold
+        )
+        
+        return result
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating emissions: {str(e)}")
+
+@app.post("/api/generate-report")
+async def generate_report(data: EmissionInput):
+    try:
+        result = await calculate_emissions(data)
+        pdf_path = generate_pdf_report_calc(result, data)
+        
+        return FileResponse(
+            path=pdf_path,
+            filename="carbon-footprint-report.pdf",
+            media_type="application/pdf"
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
 
 import uvicorn
 
