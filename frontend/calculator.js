@@ -1,7 +1,7 @@
 // Carbon Emission Calculator JavaScript
 
 // API endpoint
-const API_BASE_URL = 'https://pollution-heat-map.onrender.com';;
+const API_BASE_URL = 'https://pollution-heat-map-backend.onrender.com';
 
 document.addEventListener('DOMContentLoaded', function () {
     // Get form and result elements

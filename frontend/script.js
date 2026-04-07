@@ -1,5 +1,5 @@
 // API endpoint
-const API_BASE_URL = 'https://pollution-heat-map.onrender.com';
+const API_BASE_URL = 'https://pollution-heat-map-backend.onrender.com';
 
 // DOM elements
 const citySelect = document.getElementById('city-select');
