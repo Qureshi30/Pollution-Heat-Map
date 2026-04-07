@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emission Tracker - Home</title>
+    <!-- Primary Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback for Tailwind CSS -->
+    <script>
+        // Check if Tailwind loaded correctly
+        window.addEventListener('DOMContentLoaded', function () {
+            // Simple check to see if Tailwind styles are applied
+            const element = document.createElement('div');
+            element.className = 'hidden';
+            document.body.appendChild(element);
+
+            const styles = window.getComputedStyle(element);
+            const isHidden = styles.display === 'none';
+            document.body.removeChild(element);
+
+            if (!isHidden) {
+                console.log('Tailwind CSS failed to load. Loading fallback...');
+                // Load alternative Tailwind CSS
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css';
+                document.head.appendChild(link);
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- This file redirects to home.html -->
+    <script>
+        window.location.href = 'home.html';
+    </script>
+</body>
+
+</html>

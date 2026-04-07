@@ -449,18 +449,10 @@ function showLocationOnMap(lat, lon, label) {
     mapFrame.src = `http://localhost:8001/api/leaflet-marker?lat=${lat}&lon=${lon}&label=${encodeURIComponent(label || 'Selected Location')}`;
 }
 
-// Add to the heatmap JavaScript code
-map.on('click', function (e) {
-    // Add a marker at the clicked location
-    var clickMarker = L.marker(e.latlng).addTo(map);
-
-    // Open a popup with location information
-    clickMarker.bindPopup(
-        `<b>Selected Location</b><br>
-        Latitude: ${e.latlng.lat.toFixed(6)}<br>
-        Longitude: ${e.latlng.lng.toFixed(6)}<br>
-        <button onclick="parent.postMessage({type: 'locationSelected', lat: ${e.latlng.lat}, lng: ${e.latlng.lng}}, '*')">
-          Show Details
-        </button>`
-    ).openPopup();
+// Listen for messages from the iframe map
+window.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'map-click') {
+        console.log('Map clicked at:', event.data.lat, event.data.lng);
+        // You can add custom handling for map clicks here
+    }
 });
